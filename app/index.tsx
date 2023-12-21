@@ -1,11 +1,12 @@
-import { Button, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { Camera, CameraType } from "expo-camera";
-import { useFocusEffect, useRouter } from "expo-router";
+import { Stack, useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useRef, useState } from "react";
 import { useIsFocused } from "@react-navigation/native";
 import { useSetAtom } from "jotai"
 import { manipulateAsync } from "expo-image-manipulator";
 import { pictureURIAtom } from "../atoms/pictureURI";
+import { Button } from "react-native-paper";
 
 export default function Home() {
     const [permission, requestPermission] = Camera.useCameraPermissions();
@@ -43,22 +44,26 @@ export default function Home() {
         setCameraType(cameraType === CameraType.back ? CameraType.front : CameraType.back);
     }
 
-    if (!cameraGranted) return (<View><Button onPress={handleRequestPermission} title="Request Permission" /></View>)
+    if (!cameraGranted) {
+        return (
+            <View>
+                <Button onPress={handleRequestPermission}>Request Permission</Button>
+            </View>
+        )
+    }
 
     return (
-        <View style={styles.view}>
+        <View >
+            <Stack.Screen options={{ title: "Accueil" }} />
             {/* Unmount camera when route is not focused */}
             {isFocused && <Camera ref={cameraRef} type={cameraType} onCameraReady={() => setCameraReady(true)} style={styles.camera} />}
-            <Button title="Flip" onPress={handleFlip} />
-            <Button title="Take capture" onPress={handleCapture} />
+            <Button onPress={handleFlip}>Flip</Button>
+            <Button onPress={handleCapture}>Take capture</Button>
         </View>
     )
 }
 
 const styles = StyleSheet.create({
-    view: {
-        display: "flex"
-    },
     camera: {
         width: 500,
         height: 500

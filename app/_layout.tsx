@@ -1,10 +1,13 @@
-import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import MaterialIcon from '@expo/vector-icons/MaterialIcons';
+import Header from '../components/Header';
 import { useFonts } from 'expo-font';
 import { SplashScreen, Stack } from 'expo-router';
 import { useEffect } from 'react';
-import { useColorScheme } from 'react-native';
-import { Provider as JotaiProvider } from "jotai"
+import { Provider as JotaiProvider, useAtomValue } from "jotai"
+import { Provider as PaperProvider, MD3DarkTheme, MD3LightTheme, Surface } from "react-native-paper";
+import { ThemeMode, themeModeAtom } from '../atoms/themeMode';
+import { StyleSheet } from 'react-native';
+import { setBackgroundColorAsync } from "expo-system-ui";
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -21,7 +24,7 @@ SplashScreen.preventAutoHideAsync();
 export default function RootLayout() {
   const [loaded, error] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-    ...FontAwesome.font,
+    ...MaterialIcon.font,
   });
 
   // Expo Router uses Error Boundaries to catch errors in the navigation tree.
@@ -42,14 +45,35 @@ export default function RootLayout() {
   return <RootLayoutNav />;
 }
 
-function RootLayoutNav() {
-  const colorScheme = useColorScheme();
+function Router() {
+  const themeModeSelected = useAtomValue(themeModeAtom);
+  const theme = themeModeSelected === ThemeMode.Dark ? MD3DarkTheme : MD3LightTheme;
+
+  useEffect(() => {
+    (async () => {
+      await setBackgroundColorAsync(theme.colors.primary);
+    })
+  }, [])
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <JotaiProvider>
-        <Stack />
-      </JotaiProvider>
-    </ThemeProvider>
+    <PaperProvider theme={theme}>
+      <Surface style={styles.surface}>
+        <Stack screenOptions={{ header: (props) => <Header title={props.options.title} /> }} />
+      </Surface>
+    </PaperProvider>
+  )
+}
+
+function RootLayoutNav() {
+  return (
+    <JotaiProvider>
+      <Router />
+    </JotaiProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  surface: {
+    flex: 1
+  }
+});

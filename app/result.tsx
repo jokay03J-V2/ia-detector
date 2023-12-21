@@ -1,10 +1,14 @@
 import { Stack } from "expo-router";
-import { Button, Image, StyleSheet, Text, View } from "react-native";
+import { Image, KeyboardAvoidingView, Platform, StyleSheet, View } from "react-native";
 import { useAtomValue } from "jotai";
 import { pictureURIAtom } from "../atoms/pictureURI";
+import { ActivityIndicator, Button, TextInput } from "react-native-paper";
+import { useState } from "react";
 
 export default function Result() {
     const pictureURI = useAtomValue(pictureURIAtom);
+    const [loading, setLoading] = useState(false);
+    const [result, setResult] = useState<string | null>(null);
 
     async function handleOCR() {
         if (!pictureURI) return;
@@ -16,6 +20,7 @@ export default function Result() {
         body.append("detectOrientation", "true");
         body.append("OCREngine", "2");
         console.log("loading");
+        setLoading(true);
         const response = await fetch("https://api.ocr.space/parse/image", {
             headers: {
                 apiKey: process.env.EXPO_PUBLIC_API_KEY as string
@@ -23,15 +28,21 @@ export default function Result() {
         });
 
         const responseData = await response.json();
-        console.log(responseData);
+        setLoading(false);
+        if (response.ok && responseData.ParsedResults[0].ParsedText) {
+            setResult(responseData.ParsedResults[0].ParsedText);
+        }
     }
 
     return (
-        <View>
-            <Stack.Screen options={{ title: "Resultat" }} />
-            {pictureURI && <Image style={styles.camera} source={{ uri: pictureURI, height: styles.camera.height, width: styles.camera.width }} onError={(err) => console.error(err)} />}
-            <Button title="Hande OCR" onPress={handleOCR} />
-        </View>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
+            <View style={styles.container}>
+                <Stack.Screen options={{ title: "Resultat" }} />
+                {/* {pictureURI && <Image style={styles.camera} source={{ uri: pictureURI, height: styles.camera.height, width: styles.camera.width }} onError={(err) => console.error(err)} />} */}
+                <Button onPress={handleOCR}>Hande OCR</Button>
+                {loading && <ActivityIndicator />}
+                {result && <TextInput value={result} label={"Resultat"} />}</View>
+        </KeyboardAvoidingView>
     )
 }
 
@@ -39,5 +50,8 @@ const styles = StyleSheet.create({
     camera: {
         height: 500,
         width: 500
+    },
+    container: {
+        flex: 1
     }
 })
